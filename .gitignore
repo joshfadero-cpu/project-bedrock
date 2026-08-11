@@ -1,0 +1,42 @@
+# ---------- Terraform ----------
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Real variable values. Only the .example file is committed.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# ---------- Credentials, never commit ----------
+.env
+.env.*
+*.pem
+*.key
+credentials
+kubeconfig
+*kubeconfig*
+
+# ---------- Build artefacts ----------
+lambda/*.zip
+lambda/build/
+helm/charts/
+*.tgz
+
+# ---------- macOS ----------
+.DS_Store
+.AppleDouble
+
+# ---------- Editors ----------
+.vscode/
+.idea/
+*.swp
