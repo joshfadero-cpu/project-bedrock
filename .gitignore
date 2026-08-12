@@ -40,3 +40,7 @@ helm/charts/
 .vscode/
 .idea/
 *.swp
+
+# ---------- Vendored Helm subcharts (must be committed) ----------
+!helm/**/charts/
+!helm/**/charts/*.tgz
