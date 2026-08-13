@@ -47,3 +47,19 @@ module "networking" {
   private_subnet_cidrs = var.private_subnet_cidrs
   cluster_name         = var.cluster_name
 }
+
+# ------------------------------------------------------------------
+# EKS: cluster, OIDC provider, managed node group
+# ------------------------------------------------------------------
+module "eks" {
+  source = "./modules/eks"
+
+  cluster_name       = var.cluster_name
+  cluster_version    = var.cluster_version
+  public_subnet_ids  = module.networking.public_subnet_ids
+  private_subnet_ids = module.networking.private_subnet_ids
+  node_instance_type = var.node_instance_type
+  node_desired_size  = var.node_desired_size
+  node_min_size      = var.node_min_size
+  node_max_size      = var.node_max_size
+}
