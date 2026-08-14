@@ -63,3 +63,44 @@ module "eks" {
   node_min_size      = var.node_min_size
   node_max_size      = var.node_max_size
 }
+
+# ------------------------------------------------------------------
+# Serverless: assets bucket, asset processor Lambda, S3 trigger
+# ------------------------------------------------------------------
+module "serverless" {
+  source = "./modules/serverless"
+
+  assets_bucket_name   = "bedrock-assets-${var.student_id}"
+  lambda_function_name = "bedrock-asset-processor"
+  lambda_source_dir    = "${path.root}/../lambda"
+}
+
+# ------------------------------------------------------------------
+# Data layer: RDS MySQL, RDS PostgreSQL, DynamoDB
+# ------------------------------------------------------------------
+module "data" {
+  source = "./modules/data"
+
+  name_prefix               = var.project_name
+  vpc_id                    = module.networking.vpc_id
+  private_subnet_ids        = module.networking.private_subnet_ids
+  cluster_security_group_id = module.eks.cluster_security_group_id
+  db_instance_class         = var.db_instance_class
+  backup_retention_days     = var.db_backup_retention_days
+}
+
+# ------------------------------------------------------------------
+# IAM: read-only developer user, cluster access entry, carts IRSA role
+# ------------------------------------------------------------------
+module "iam" {
+  source = "./modules/iam"
+
+  cluster_name          = module.eks.cluster_name
+  namespace             = "retail-app"
+  dev_user_name         = "bedrock-dev-view"
+  assets_bucket_arn     = module.serverless.assets_bucket_arn
+  carts_table_arn       = module.data.carts_table_arn
+  oidc_provider_arn     = module.eks.oidc_provider_arn
+  oidc_provider_url     = module.eks.oidc_provider_url
+  carts_service_account = "carts"
+}
