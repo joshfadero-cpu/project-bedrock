@@ -32,3 +32,8 @@ output "oidc_provider_url" {
   description = "URL of the cluster OIDC provider, without the https prefix"
   value       = replace(aws_iam_openid_connect_provider.cluster.url, "https://", "")
 }
+
+output "node_group_name" {
+  description = "Name of the managed node group, used to order the observability add-on after nodes exist"
+  value       = aws_eks_node_group.bedrock.node_group_name
+}

@@ -104,3 +104,13 @@ module "iam" {
   oidc_provider_url     = module.eks.oidc_provider_url
   carts_service_account = "carts"
 }
+
+# ------------------------------------------------------------------
+# Observability: container log collection and log retention
+# ------------------------------------------------------------------
+module "observability" {
+  source = "./modules/observability"
+
+  cluster_name          = module.eks.cluster_name
+  node_group_dependency = module.eks.node_group_name
+}
