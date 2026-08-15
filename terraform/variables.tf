@@ -91,7 +91,7 @@ variable "db_instance_class" {
 variable "db_backup_retention_days" {
   description = "Automated backup retention window in days. Must be above zero for bonus objective 5.5."
   type        = number
-  default     = 7
+  default     = 7 # retention in days
 }
 
 # ---------------- Cost guardrail ----------------
