@@ -1,0 +1,95 @@
+# ------------------------------------------------------------------
+# Project Bedrock values for the retail store sample application.
+#
+# The in-cluster catalog and orders databases are replaced by managed
+# RDS instances, and the carts store by DynamoDB reached through IRSA.
+# RabbitMQ and Redis remain in-cluster, which the assessment permits.
+#
+# No credential appears in this file. Both database secrets are
+# created from SSM Parameter Store at deploy time, and the charts are
+# told to reference them by name rather than create them.
+# ------------------------------------------------------------------
+
+# ---------------- Catalog: RDS MySQL ----------------
+catalog:
+  mysql:
+    create: false
+  app:
+    persistence:
+      provider: mysql
+      endpoint: "project-bedrock-catalog-mysql.csfku0auwnto.us-east-1.rds.amazonaws.com:3306"
+      database: "catalog"
+      secret:
+        create: false
+        name: catalog-db
+
+# ---------------- Orders: RDS PostgreSQL, RabbitMQ in cluster ----------------
+orders:
+  postgresql:
+    create: false
+  rabbitmq:
+    create: true
+  app:
+    persistence:
+      provider: postgres
+      endpoint: "project-bedrock-orders-postgres.csfku0auwnto.us-east-1.rds.amazonaws.com:5432"
+      database: "orders"
+      secret:
+        create: false
+        name: orders-db
+    messaging:
+      provider: rabbitmq
+
+# ---------------- Carts: DynamoDB via IRSA ----------------
+cart:
+  serviceAccount:
+    create: true
+    # Named explicitly. Left to the chart, this becomes
+    # "<release>-carts", which would not match the subject condition
+    # in the IRSA trust policy and the pod could not reach DynamoDB.
+    name: carts
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::280156627877:role/project-bedrock-carts-dynamodb-role"
+  app:
+    persistence:
+      provider: dynamodb
+      dynamodb:
+        tableName: "bedrock-carts"
+        createTable: false
+
+# ---------------- Checkout: Redis in cluster ----------------
+checkout:
+  redis:
+    create: true
+  app:
+    persistence:
+      provider: redis
+    # Checkout calls orders directly to create an order. Without this
+    # the service cannot reach it.
+    endpoints:
+      orders: http://retail-store-orders:80
+
+# ---------------- UI: exposed through an ALB ----------------
+ui:
+  app:
+    # The UI has no idea where its sibling services are unless told.
+    # Left unset it serves built-in placeholder data and never calls
+    # a backend, so the store looks correct while proving nothing.
+    # Names carry the "retail-store" release prefix.
+    endpoints:
+      catalog: http://retail-store-catalog:80
+      carts: http://retail-store-carts:80
+      checkout: http://retail-store-checkout:80
+      orders: http://retail-store-orders:80
+  ingress:
+    enabled: true
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/healthcheck-path: /actuator/health/liveness
+      alb.ingress.kubernetes.io/tags: Project=tinyuka-2025-capstone
+    # Left empty deliberately. With no hosts the chart generates a rule
+    # with no host field, so the ALB answers on its own DNS name for
+    # any Host header. Naming a host here would restrict it to that name.
+    hosts: []
